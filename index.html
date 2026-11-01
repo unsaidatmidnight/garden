@@ -126,8 +126,9 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   "next_day": 4,
   "planted": 30,
   "counted": "1 nov",
-  "next": { "name": "basketball court", "need": 49 },
+  "next": { "name": "basketball court", "need": 49, "w": 28.65, "h": 15.24 },
   "unlocked": ["color"],
+  "green_upto": 30,
   "riddle_day": 2,
   "trees": [
     { "n": 1, "day": 1 },
@@ -156,6 +157,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       <li>→ <b>follow</b> and you get a tree. it's in here somewhere, just without your name on it.</li>
       <li>→ <b>comment "me"</b> under the latest garden post on instagram and your name gets carved on a sign in the next episode. then you can find it below.</li>
       <li>→ <b>special trees</b> are rare: the first four who asked, plus one vote winner at every milestone.</li>
+      <li>→ <b>new trees sleep</b> (gray) until the next milestone. then they wake up with the rest of the garden.</li>
     </ul>
   </section>
 
@@ -287,7 +289,10 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     return c;
   }
   const COIN_FRONT = coinCanvas(false), COIN_BACK = coinCanvas(true);
-  const baseImg = t => t.sprouting ? SPROUT_IMG : t.look === "red" ? RED_IMG : TREE_IMG;
+  // new trees stay gray (asleep) until the next milestone wakes them up
+  const GRAY_IMG = spriteCanvas(TREE, null), GRAY_SPROUT = spriteCanvas(SPROUT, null);
+  const asleep = t => COLOR_ON && !t.look && D.green_upto != null && t.n > D.green_upto;
+  const baseImg = t => t.sprouting ? (asleep(t) ? GRAY_SPROUT : SPROUT_IMG) : t.look === "red" ? RED_IMG : asleep(t) ? GRAY_IMG : TREE_IMG;
 
   function sparkle(c, x, y, r, a) {
     if (r < 0.5 || a <= 0) return;
@@ -410,8 +415,16 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   const PLOTS = spiral(total + 8);
   const POS = PLOTS.slice(0, total);
   const FREE = PLOTS.slice(total);
+  // the next goal, drawn to scale around the garden (1 plot = 3 m)
+  const px_ = POS.map(p => p[0]), py_ = POS.map(p => p[1]);
+  const GC = [(Math.min(...px_) + Math.max(...px_)) / 2, (Math.min(...py_) + Math.max(...py_)) / 2];
+  const GOAL = D.next && D.next.w ? { w: D.next.w / 3, h: D.next.h / 3 } : null;
   const xs = PLOTS.map(p => p[0]), ys = PLOTS.map(p => p[1]);
   const BB = { x0: Math.min(...xs) - 0.5, x1: Math.max(...xs) + 0.5, y0: Math.min(...ys) - 0.5, y1: Math.max(...ys) + 0.5 };
+  if (GOAL) {
+    BB.x0 = Math.min(BB.x0, GC[0] - GOAL.w / 2 - 0.3); BB.x1 = Math.max(BB.x1, GC[0] + GOAL.w / 2 + 0.3);
+    BB.y0 = Math.min(BB.y0, GC[1] - GOAL.h / 2 - 0.9); BB.y1 = Math.max(BB.y1, GC[1] + GOAL.h / 2 + 0.3);
+  }
 
   // ---------- stats ----------
   document.getElementById("sTrees").textContent = D.planted.toLocaleString("en-US");
@@ -460,6 +473,23 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     ctx.fillRect(0, 0, W, H);
     const plot = cam.s, P = plot * 0.043;
     const dash = Math.max(3, plot / 28);
+    if (GOAL) { // the finish line: next milestone at true scale
+      const [gx, gy] = toScreen(GC[0] - GOAL.w / 2, GC[1] - GOAL.h / 2);
+      const gw = GOAL.w * plot, gh = GOAL.h * plot;
+      const a = time == null ? 0.42 : 0.34 + 0.1 * Math.sin(time / 900);
+      ctx.save();
+      ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 1.5;
+      ctx.setLineDash([dash * 2, dash * 1.5]);
+      ctx.strokeRect(gx, gy, gw, gh);
+      ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(gx + gw / 2, gy); ctx.lineTo(gx + gw / 2, gy + gh); ctx.stroke();
+      ctx.beginPath(); ctx.arc(gx + gw / 2, gy + gh / 2, (1.8 / 3) * plot, 0, 7); ctx.stroke();
+      ctx.setLineDash([]);
+      const fs = Math.max(11, Math.min(15, plot * 0.16));
+      ctx.font = `${fs}px ${FONT}`; ctx.fillStyle = "rgba(255,255,255,0.62)"; ctx.textBaseline = "bottom";
+      ctx.fillText(`finish line: ${D.next.name} · ${D.planted}/${D.next.need}`, gx, gy - 6);
+      ctx.restore();
+    }
     for (const [fx, fy] of FREE) {
       const [x, y] = toScreen(fx, fy);
       ctx.setLineDash([dash, dash]); ctx.lineWidth = 1;
