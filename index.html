@@ -122,11 +122,12 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
 <body>
 <script type="application/json" id="garden-data">
 {
-  "day": 2,
-  "next_day": 3,
-  "planted": 28,
+  "day": 3,
+  "next_day": 4,
+  "planted": 30,
   "counted": "1 nov",
-  "next": { "name": "tennis court", "need": 29 },
+  "next": { "name": "basketball court", "need": 49 },
+  "unlocked": ["color"],
   "riddle_day": 2,
   "trees": [
     { "n": 1, "day": 1 },
@@ -258,10 +259,18 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     }
     return c;
   }
-  const TREE_IMG = spriteCanvas(TREE);
-  const SPROUT_IMG = spriteCanvas(SPROUT);
+  // unlocked at 29 trees: the garden is green (leaves) with bark-brown trunks
+  const COLOR_ON = (D.unlocked || []).includes("color");
+  const tint = (s, m) => [Math.round(s * m[0]), Math.round(s * m[1]), Math.round(s * m[2])];
+  const LEAF_M = [0.60, 0.90, 0.66], BARK_M = [0.86, 0.66, 0.50];
+  const GREEN = {}, BARK = {};
+  for (const s of [235, 178, 128, 82]) GREEN[s] = tint(s, LEAF_M);
+  for (const s of [108, 72, 60, 50]) BARK[s] = tint(s, BARK_M);
+  const NATURE = COLOR_ON ? Object.assign({}, GREEN, BARK) : null;
+  const TREE_IMG = spriteCanvas(TREE, NATURE);
+  const SPROUT_IMG = spriteCanvas(SPROUT, COLOR_ON ? Object.assign({ 178: tint(178, LEAF_M), 150: tint(150, LEAF_M), 190: tint(190, LEAF_M), 220: tint(220, LEAF_M) }, BARK) : null);
   const RED_IMG = (() => {
-    const c = spriteCanvas(TREE, RED), x = c.getContext("2d");
+    const c = spriteCanvas(TREE, Object.assign({}, COLOR_ON ? BARK : {}, RED)), x = c.getContext("2d");
     const big = document.createElement("canvas"); big.width = 51; big.height = 63;
     const b = big.getContext("2d"); b.imageSmoothingEnabled = false; b.drawImage(c, 0, 0, 51, 63);
     for (const [lx, ly, s] of RED_LEAVES) { b.fillStyle = `rgb(${RED[s].join(",")})`; b.fillRect(Math.round(lx * 3), Math.round(ly * 3), 3, 3); }
@@ -567,6 +576,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     for (const [key, s] of map) {
       const [x, y] = key.split(",").map(Number);
       if (t.look === "red" && RED[s]) px(x, y, `rgb(${RED[s].join(",")})`, true);
+      else if (NATURE && NATURE[s]) px(x, y, `rgb(${NATURE[s].join(",")})`, s >= 230);
       else px(x, y, `rgb(${s},${s},${s})`, s >= 230);
     }
     if (t.look === "red") for (const [lx, ly, s] of RED_LEAVES) px(lx, ly, `rgb(${RED[s].join(",")})`, true);
