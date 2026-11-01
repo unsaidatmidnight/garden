@@ -126,8 +126,8 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   "next": { "name": "tennis court", "need": 29 },
   "riddle_day": 2,
   "trees": [
-    { "n": 1, "day": 1, "note": "the first one. it was here before it was cool." },
-    { "n": 2, "nick": "tanmay.unc", "day": 2, "note": "follower #2. showed up early. respect." },
+    { "n": 1, "day": 1 },
+    { "n": 2, "nick": "tanmay.unc", "day": 2, "note": "showed up early. respect." },
     { "n": 3, "nick": "cricketer_aarav_sharma", "day": 2, "note": "sign extended to fit the name. barely." },
     { "n": 4, "day": 2 },
     { "n": 5, "nick": "dom7.nuss", "day": 3, "founder": true, "look": "bubble", "bubble": "tung. tung. tung.", "note": "it says this every night at 3am. we're looking into it." },
@@ -142,7 +142,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
 
 <div id="grain" aria-hidden="true"></div>
 <div class="wrap">
-  <header class="top"><span>the midnight garden</span><span id="dayLabel">day 002</span></header>
+  <header class="top"><span>the midnight garden</span><span>@unsaid.atmidnight</span></header>
 
   <section class="hook">
     <h1>1 follower = 1 tree.<span class="cursor" aria-hidden="true"></span></h1>
@@ -156,7 +156,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       <input id="q" name="q" type="text" inputmode="text" autocapitalize="none" spellcheck="false" placeholder="your instagram name" aria-describedby="msg">
       <button type="submit">find</button>
     </div>
-    <p id="msg" aria-live="polite">try a name, or a tree number like 5.</p>
+    <p id="msg" aria-live="polite">type the name you use on instagram.</p>
   </form>
 
   <section aria-label="the garden">
@@ -173,7 +173,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   </section>
 
   <section id="card" class="card empty" aria-live="polite">
-    <p class="small">type your name above or tap a tree on the map. every tree has a plot of 3 × 3 m and a number for life.</p>
+    <p class="small">type your name above or tap a tree on the map. every tree has a plot of 3 × 3 m. for life.</p>
   </section>
 
   <section>
@@ -184,7 +184,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   <section class="riddle">
     <p>open riddle</p>
     <p class="q">how many followers does it take to cover the planet?</p>
-    <p id="riddleWhere">guess in the comments under day 002. closest guess gets a tree with their name.</p>
+    <p id="riddleWhere">guess in the comments under the latest garden episode. closest guess gets a tree with their name.</p>
   </section>
 
   <footer>
@@ -396,7 +396,6 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   const BB = { x0: Math.min(...xs) - 0.5, x1: Math.max(...xs) + 0.5, y0: Math.min(...ys) - 0.5, y1: Math.max(...ys) + 0.5 };
 
   // ---------- stats ----------
-  document.getElementById("dayLabel").textContent = "day " + pad3(D.day);
   document.getElementById("sTrees").textContent = D.planted.toLocaleString("en-US");
   document.getElementById("sArea").textContent = (D.planted * 9).toLocaleString("en-US") + " m²";
   const sprouts = D.trees.filter(t => t.pending).length;
@@ -404,8 +403,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   document.getElementById("sNext").textContent = D.next.name;
   const togo = Math.max(0, D.next.need - D.planted);
   document.getElementById("sTogo").textContent = `${D.planted}/${D.next.need} · ${togo} to go. no pressure.`;
-  document.getElementById("sCensus").textContent = `last count: ${D.counted || "day " + pad3(D.day)} · next episode: day ${pad3(D.next_day)}`;
-  document.getElementById("riddleWhere").textContent = `guess in the comments under day ${pad3(D.riddle_day)}. closest guess gets a tree with their name.`;
+  document.getElementById("sCensus").textContent = D.counted ? `last count: ${D.counted}` : "";
   const bar = document.getElementById("bar");
   const filled = Math.max(1, Math.floor(Math.min(1, D.planted / D.next.need) * 14 + 1e-6));
   for (let i = 0; i < 14; i++) { const s = document.createElement("i"); if (i < filled) s.className = "on"; bar.appendChild(s); }
@@ -489,7 +487,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 2;
       ctx.strokeRect(x - plot / 2 + 1, y - plot / 2 + 1, plot - 2, plot - 2);
       ctx.restore();
-      const label = `#${pad3(t.n)} ${t.nick ? "@" + t.nick : "no sign yet"}`;
+      const label = t.nick ? "@" + t.nick : "no sign yet";
       const fs = Math.max(12, Math.min(17, plot * 0.12));
       ctx.font = `${fs}px ${FONT}`;
       const tw = ctx.measureText(label).width;
@@ -599,9 +597,9 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const note = t.note || (t.nick ? "" : "if this one's yours, comment \"me\" under any garden episode.");
     const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now." : "";
     cardEl.innerHTML = `
-      <div class="portrait"><canvas aria-label="portrait of tree #${pad3(t.n)}"></canvas></div>
+      <div class="portrait"><canvas aria-label="portrait of the tree"></canvas></div>
       <div class="facts">
-        <p class="id">tree #${pad3(t.n)}${t.founder ? " · founder" : ""}</p>
+        ${t.founder ? `<p class="id">founder</p>` : ""}
         <dl>
           <dt>owner</dt><dd>${esc(owner)}</dd>
           <dt>planted</dt><dd>${esc(planted)}</dd>
@@ -619,7 +617,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   // ---------- selection, search, chips, hash ----------
   const msg = document.getElementById("msg");
   function setMsg(html) { msg.innerHTML = html; }
-  function found(t) { return t.nick ? `found it. <strong>tree #${pad3(t.n)}</strong> belongs to <strong>@${esc(t.nick)}</strong>.` : `<strong>tree #${pad3(t.n)}</strong>. no sign yet.`; }
+  function found(t) { return t.nick ? `found it. this one belongs to <strong>@${esc(t.nick)}</strong>.` : `a tree with <strong>no sign yet</strong>.`; }
 
   function select(n, fromUser) {
     selected = n;
@@ -629,15 +627,13 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     animateTo(focusView(n));
     paint();
     const slug = slugOf(t);
-    if (fromUser) { try { if (location.hash.slice(1) !== slug) location.hash = slug; } catch (e) {} }
+    if (fromUser && t.nick) { try { if (location.hash.slice(1) !== slug) location.hash = slug; } catch (e) {} }
   }
 
   function norm(s) { return s.trim().replace(/^@+/, "").toLowerCase(); }
   function search(raw) {
     const q = norm(raw);
     if (!q) return { kind: "empty" };
-    const num = q.match(/^#?(\d{1,7})$/);
-    if (num) { const n = +num[1]; return n >= 1 && n <= total ? { kind: "one", t: info(n) } : { kind: "nonum", n }; }
     const exact = named.find(t => t.nick.toLowerCase() === q);
     if (exact) return { kind: "one", t: info(exact.n) };
     const part = named.filter(t => t.nick.toLowerCase().includes(q));
@@ -651,7 +647,6 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const r = search(document.getElementById("q").value);
     if (r.kind === "empty") { setMsg("type a name first. the trees can't guess. yet."); return; }
     if (r.kind === "one") { select(r.t.n, true); setMsg(found(r.t)); toMap(); return; }
-    if (r.kind === "nonum") { setMsg(`there's no tree #${r.n}. yet. the garden has ${total} plots so far.`); return; }
     if (r.kind === "many") {
       setMsg("a few trees match. which one?<div class=\"chips\">" + r.list.map(t => `<button type="button" data-n="${t.n}">@${esc(t.nick)}</button>`).join("") + "</div>");
       return;
@@ -664,7 +659,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   for (const t of named) {
     const b = document.createElement("button");
     b.type = "button"; b.dataset.n = t.n; b.setAttribute("aria-pressed", "false");
-    b.textContent = `#${pad3(t.n)} @${t.nick}`;
+    b.textContent = `@${t.nick}`;
     b.addEventListener("click", () => { select(t.n, true); setMsg(found(info(t.n))); toMap(); });
     signs.appendChild(b);
   }
@@ -676,7 +671,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     if (!h) return false;
     for (let n = 1; n <= total; n++) {
       const t = info(n);
-      if (slugOf(t) === h) { if (selected !== n) { select(n, false); setMsg(found(t)); } return true; }
+      if (t.nick && slugOf(t) === h) { if (selected !== n) { select(n, false); setMsg(found(t)); } return true; }
     }
     return false;
   }
