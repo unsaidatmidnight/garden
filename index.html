@@ -58,6 +58,9 @@ h1 { margin: 0; font-weight: 400; font-size: clamp(30px, 8.4vw, 46px); line-heig
 .cursor { display: inline-block; width: 0.5em; height: 0.82em; margin-left: 0.12em; background: var(--fg); box-shadow: 0 0 12px var(--glow); vertical-align: -0.06em; animation: blink 1.1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 .lede { margin: 0; color: var(--dim); max-width: 46ch; }
+.how { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; color: var(--dim); font-size: 15px; max-width: 52ch; }
+.how li { padding-left: 1.4em; text-indent: -1.4em; }
+.how b { color: var(--fg); font-weight: 400; }
 
 form { display: grid; gap: 10px; }
 label { color: var(--dim); font-size: 14px; letter-spacing: 0.06em; }
@@ -147,16 +150,21 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   <section class="hook">
     <h1>1 follower = 1 tree.<span class="cursor" aria-hidden="true"></span></h1>
     <p class="lede">every follower plants one pixel tree. the plan: cover the whole planet. eta: never. probably.</p>
+    <ul class="how" aria-label="how the garden works">
+      <li>→ <b>follow</b> and you get a tree. it's in here somewhere, just without your name on it.</li>
+      <li>→ <b>comment "me"</b> under a garden episode and your name gets carved on a sign in the next one. then you can find it below.</li>
+      <li>→ <b>special trees</b> are rare: the first four who asked, plus one vote winner at every milestone.</li>
+    </ul>
   </section>
 
   <form id="find" autocomplete="off">
-    <label for="q">find your tree</label>
+    <label for="q">find your sign</label>
     <div class="field">
       <span class="at" aria-hidden="true">@</span>
       <input id="q" name="q" type="text" inputmode="text" autocapitalize="none" spellcheck="false" placeholder="your instagram name" aria-describedby="msg">
       <button type="submit">find</button>
     </div>
-    <p id="msg" aria-live="polite">type the name you use on instagram.</p>
+    <p id="msg" aria-live="polite">works for trees with a sign. no sign yet? see above.</p>
   </form>
 
   <section aria-label="the garden">
@@ -594,7 +602,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const planted = t.sprouting ? `arrives in day ${pad3(t.day || D.next_day)}` : (t.day ? `day ${pad3(t.day)}` + (t.day > D.day ? " (next episode)" : "") : "—");
     const status = t.sprouting ? "sprouting. patience." : (t.status || "growing. probably.");
     const owner = t.nick ? "@" + t.nick : "no sign yet";
-    const note = t.note || (t.nick ? "" : "if this one's yours, comment \"me\" under any garden episode.");
+    const note = t.note || (t.nick ? "" : "a follower's tree. no name on it yet. comment \"me\" under a garden episode to get a sign.");
     const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now." : "";
     cardEl.innerHTML = `
       <div class="portrait"><canvas aria-label="portrait of the tree"></canvas></div>
@@ -651,7 +659,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       setMsg("a few trees match. which one?<div class=\"chips\">" + r.list.map(t => `<button type="button" data-n="${t.n}">@${esc(t.nick)}</button>`).join("") + "</div>");
       return;
     }
-    setMsg(`no tree for <strong>@${esc(r.q)}</strong>. yet. step one: follow @unsaid.atmidnight. step two: comment "me" under any garden episode. your sign gets carved in the next one.`);
+    setMsg(`no sign for <strong>@${esc(r.q)}</strong> yet. if you follow, your tree is already here, it just has no name on it. comment "me" under the latest garden episode and the sign gets carved in the next one. not following yet? that part comes first.`);
   });
   msg.addEventListener("click", ev => { const b = ev.target.closest("button[data-n]"); if (b) { const t = info(+b.dataset.n); select(t.n, true); setMsg(found(t)); } });
 
