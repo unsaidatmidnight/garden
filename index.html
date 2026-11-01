@@ -152,7 +152,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     <p class="lede">every follower plants one pixel tree. the plan: cover the whole planet. eta: never. probably.</p>
     <ul class="how" aria-label="how the garden works">
       <li>→ <b>follow</b> and you get a tree. it's in here somewhere, just without your name on it.</li>
-      <li>→ <b>comment "me"</b> under a garden episode and your name gets carved on a sign in the next one. then you can find it below.</li>
+      <li>→ <b>comment "me"</b> under the latest garden post on instagram and your name gets carved on a sign in the next episode. then you can find it below.</li>
       <li>→ <b>special trees</b> are rare: the first four who asked, plus one vote winner at every milestone.</li>
     </ul>
   </section>
@@ -192,12 +192,12 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   <section class="riddle">
     <p>open riddle</p>
     <p class="q">how many followers does it take to cover the planet?</p>
-    <p id="riddleWhere">guess in the comments under the latest garden episode. closest guess gets a tree with their name.</p>
+    <p id="riddleWhere">guess in the comments under the latest garden post on instagram. closest guess gets a tree with their name.</p>
   </section>
 
   <footer>
     <span>pixel trees. I can't afford real ones. yet.</span>
-    <span>no sign yet? follow, then comment "me" under any garden episode. the sign gets carved in the next one.</span>
+    <span>no sign yet? follow, then comment "me" under the latest garden post on instagram. the sign gets carved in the next episode.</span>
     <nav>
       <a href="https://www.instagram.com/unsaid.atmidnight/" target="_blank" rel="noopener">instagram @unsaid.atmidnight</a>
       <a href="https://t.me/unsaidatmidnight" target="_blank" rel="noopener">telegram</a>
@@ -602,7 +602,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const planted = t.sprouting ? `arrives in day ${pad3(t.day || D.next_day)}` : (t.day ? `day ${pad3(t.day)}` + (t.day > D.day ? " (next episode)" : "") : "—");
     const status = t.sprouting ? "sprouting. patience." : (t.status || "growing. probably.");
     const owner = t.nick ? "@" + t.nick : "no sign yet";
-    const note = t.note || (t.nick ? "" : "a follower's tree. no name on it yet. comment \"me\" under a garden episode to get a sign.");
+    const note = t.note || (t.nick ? "" : "a follower's tree. no name on it yet. comment \"me\" under the latest garden post on instagram to get a sign.");
     const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now." : "";
     cardEl.innerHTML = `
       <div class="portrait"><canvas aria-label="portrait of the tree"></canvas></div>
@@ -659,7 +659,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       setMsg("a few trees match. which one?<div class=\"chips\">" + r.list.map(t => `<button type="button" data-n="${t.n}">@${esc(t.nick)}</button>`).join("") + "</div>");
       return;
     }
-    setMsg(`no sign for <strong>@${esc(r.q)}</strong> yet. if you follow, your tree is already here, it just has no name on it. comment "me" under the latest garden episode and the sign gets carved in the next one. not following yet? that part comes first.`);
+    setMsg(`no sign for <strong>@${esc(r.q)}</strong> yet. if you follow, your tree is already here, it just has no name on it. comment "me" under the latest garden post on instagram and the sign gets carved in the next episode. not following yet? that part comes first.`);
   });
   msg.addEventListener("click", ev => { const b = ev.target.closest("button[data-n]"); if (b) { const t = info(+b.dataset.n); select(t.n, true); setMsg(found(t)); } });
 
