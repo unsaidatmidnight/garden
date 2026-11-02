@@ -133,13 +133,13 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
 <body>
 <script type="application/json" id="garden-data">
 {
-  "day": 3,
-  "next_day": 4,
-  "planted": 30,
-  "counted": "1 nov",
-  "next": { "name": "basketball court", "need": 49, "w": 28.65, "h": 15.24 },
-  "unlocked": ["color"],
-  "green_upto": 30,
+  "day": 4,
+  "next_day": 5,
+  "planted": 64,
+  "counted": "2 nov",
+  "next": { "name": "olympic pool", "need": 139, "w": 50, "h": 25 },
+  "unlocked": ["color", "moonlight"],
+  "green_upto": 49,
   "latest_post": "https://www.instagram.com/reel/DfNXn6UohDy/",
   "riddle_day": 2,
   "trees": [
@@ -153,7 +153,10 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     { "n": 8, "nick": "gustfferreira", "day": 3, "founder": true, "look": "red", "status": "red. on purpose.", "note": "the only red tree here. it insists it's autumn." },
     { "n": 9, "nick": "d3mon.it", "day": 3, "note": "asked for eyes and a voice. the vote decides. it opens at 29." },
     { "n": 10, "nick": "notnoir_", "day": 3, "note": "asked for a tree that glows green. no comment. none at all." },
-    { "n": 11, "nick": "eyas_3114", "day": 3, "note": "guessed 170 million trees. the riddle is still open. so is the garden." }
+    { "n": 11, "nick": "eyas_3114", "day": 3, "note": "guessed 170 million trees. the riddle is still open. so is the garden." },
+    { "n": 12, "nick": "adamgallay", "day": 4, "note": "said \"mee\" with a heart. the sign took the heart seriously." },
+    { "n": 33, "nick": "librioofrancesco_", "day": 4, "winner": true, "look": "huge", "status": "huge. emotionally.", "note": "asked to be a HUGE tree. same size as everyone. the chain does the talking." },
+    { "n": 45, "nick": "kepin_riccmn", "day": 4, "note": "typed ME in capitals. the carving was loud." }
   ]
 }
 </script>
@@ -284,6 +287,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   }
   // unlocked at 29 trees: the garden is green (leaves) with bark-brown trunks
   const COLOR_ON = (D.unlocked || []).includes("color");
+  const MOON_ON = (D.unlocked || []).includes("moonlight");
   const tint = (s, m) => [Math.round(s * m[0]), Math.round(s * m[1]), Math.round(s * m[2])];
   const LEAF_M = [0.60, 0.90, 0.66], BARK_M = [0.86, 0.66, 0.50];
   const GREEN = {}, BARK = {};
@@ -374,6 +378,20 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
         c.globalAlpha = p < 0.82 ? 1 : (1 - p) / 0.18;
         R(x, y, 0.9, 0.9, k % 2 ? "rgb(222,56,52)" : "rgb(255,104,92)");
         c.globalAlpha = 1;
+      }
+    }
+    if (t.look === "huge") {   // council winner, day 004: a gold chain with a HUGE pendant
+      c.save(); c.shadowColor = "rgba(255,200,60,0.6)"; c.shadowBlur = P * 0.8;
+      for (let k = 0; k < 9; k++) {
+        const u = k / 8, x = 5.6 + u * 5.8, y = 12.4 + (1 - Math.abs(u - 0.5) * 2) * 2.3;
+        R(x, y, 0.62, 0.62, k % 2 ? "rgb(214,160,40)" : "rgb(250,206,90)");
+      }
+      R(6.6, 15.0, 4.4, 2.2, "rgb(246,192,58)");
+      c.restore();
+      if (P > 4) {
+        c.fillStyle = "#3a2604"; c.font = `${Math.max(7, P * 1.25)}px ${FONT}`;
+        c.textAlign = "center"; c.textBaseline = "middle";
+        c.fillText("HUGE", x0 + 8.8 * P, y0 + 16.15 * P); c.textAlign = "left";
       }
     }
     if (t.look === "bubble" && t.bubble) {
@@ -494,6 +512,21 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     ctx.fillRect(0, 0, W, H);
     const plot = cam.s, P = plot * 0.043;
     const dash = Math.max(3, plot / 28);
+    if (MOON_ON) { // unlocked at the basketball court: moonlight pools on the garden, a crescent in the corner
+      const [gx, gy] = toScreen(GC[0], GC[1]);
+      const rr = plot * (Math.max(BB.x1 - BB.x0, BB.y1 - BB.y0) * 0.62);
+      const gr = ctx.createRadialGradient(gx, gy, 0, gx, gy, rr);
+      gr.addColorStop(0, "rgba(130,160,220,0.17)"); gr.addColorStop(0.6, "rgba(110,140,210,0.07)"); gr.addColorStop(1, "rgba(100,130,200,0)");
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      const mr = Math.max(10, Math.min(18, W * 0.028)), mx = W - mr * 2.4, my = mr * 2.4;
+      const mc = document.createElement("canvas"), k = 3; mc.width = mc.height = Math.ceil(mr * 2 * k);
+      const m = mc.getContext("2d"); m.scale(k, k); m.fillStyle = "#dbe3f5";
+      m.beginPath(); m.arc(mr, mr, mr, 0, Math.PI * 2); m.fill();
+      m.globalCompositeOperation = "destination-out";
+      m.beginPath(); m.arc(mr * 1.48, mr * 0.74, mr * 0.9, 0, Math.PI * 2); m.fill();
+      ctx.save(); ctx.shadowColor = "rgba(190,210,255,0.8)"; ctx.shadowBlur = mr * 1.2; ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(mc, mx - mr, my - mr, mr * 2, mr * 2); ctx.restore();
+    }
     if (GOAL) { // the finish line: next milestone at true scale
       const [gx, gy] = toScreen(GC[0] - GOAL.w / 2, GC[1] - GOAL.h / 2);
       const gw = GOAL.w * plot, gh = GOAL.h * plot;
@@ -671,11 +704,12 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const status = t.sprouting ? "sprouting. patience." : (t.status || "growing. probably.");
     const owner = t.nick ? "@" + t.nick : "no sign yet";
     const note = t.note ? esc(t.note) : (t.nick ? "" : `a follower's tree. no name on it yet. comment "me" under ${LATEST} on instagram to get a sign.`);
-    const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now." : "";
+    const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now."
+      : t.winner ? "council winner: the most-liked idea when the garden reached a basketball court." : "";
     cardEl.innerHTML = `
       <div class="portrait"><canvas aria-label="portrait of the tree"></canvas></div>
       <div class="facts">
-        ${t.founder ? `<p class="id">founder</p>` : ""}
+        ${t.founder ? `<p class="id">founder</p>` : t.winner ? `<p class="id">council winner</p>` : ""}
         <dl>
           <dt>owner</dt><dd>${esc(owner)}</dd>
           <dt>planted</dt><dd>${esc(planted)}</dd>
@@ -720,7 +754,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     c.save(); c.shadowColor = "rgba(255,255,255,0.45)"; c.shadowBlur = 18;
     c.fillText("this one's mine.", 120, 1390); c.restore();
     c.font = `34px ${FONT}`; c.fillStyle = "#a3a3aa";
-    c.fillText(t.founder ? "a founder tree in the midnight garden." : "my tree in the midnight garden.", 120, 1466);
+    c.fillText(t.founder ? "a founder tree in the midnight garden." : t.winner ? "a council-winning tree in the midnight garden." : "my tree in the midnight garden.", 120, 1466);
     c.fillText("1 follower = 1 tree.", 120, 1516);
     c.font = `30px ${FONT}`; c.fillStyle = "#77777e";
     c.fillText("find yours: " + SITE, 120, 1640);
