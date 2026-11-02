@@ -113,6 +113,11 @@ dd { margin: 0; overflow-wrap: anywhere; }
 
 h2 { margin: 0 0 12px; font-weight: 400; font-size: 14px; letter-spacing: 0.06em; color: var(--dim); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.signlists { display: grid; gap: 22px; }
+h2 .hint { color: var(--faint); letter-spacing: 0.02em; }
+.chips.special button { color: var(--fg); border-color: rgba(246, 200, 90, 0.55); box-shadow: 0 0 10px rgba(246, 192, 58, 0.18); }
+.chips.special button::before { content: "★ "; color: rgb(246, 200, 90); }
+.chips.special button:hover, .chips.special button[aria-pressed="true"] { border-color: rgb(246, 200, 90); box-shadow: 0 0 14px rgba(246, 192, 58, 0.4); }
 .chips button { font-size: 14px; padding: 6px 10px; color: var(--dim); }
 .chips button:hover, .chips button[aria-pressed="true"] { color: var(--fg); border-color: var(--fg); }
 .riddle { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 6px; }
@@ -198,9 +203,15 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     <p class="small">type your name above or tap a tree on the map. every tree has a plot of 3 × 3 m. for life.</p>
   </section>
 
-  <section>
-    <h2>signs in the garden</h2>
-    <div class="chips" id="signs"></div>
+  <section class="signlists">
+    <div>
+      <h2>special trees <span class="hint">· founders and council winners</span></h2>
+      <div class="chips special" id="special"></div>
+    </div>
+    <div>
+      <h2>signs in the garden</h2>
+      <div class="chips" id="signs"></div>
+    </div>
   </section>
 
   <section class="riddle">
@@ -828,15 +839,17 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   });
   msg.addEventListener("click", ev => { const b = ev.target.closest("button[data-n]"); if (b) { const t = info(+b.dataset.n); select(t.n, true); setMsg(found(t)); } });
 
-  const signs = document.getElementById("signs");
+  const signs = document.getElementById("signs"), special = document.getElementById("special");
+  const isSpecial = t => t.founder || t.winner;
   for (const t of named) {
     const b = document.createElement("button");
     b.type = "button"; b.dataset.n = t.n; b.setAttribute("aria-pressed", "false");
     b.textContent = `@${t.nick}`;
+    if (isSpecial(t)) b.title = t.founder ? "founder" : "council winner";
     b.addEventListener("click", () => { select(t.n, true); setMsg(found(info(t.n))); toMap(); });
-    signs.appendChild(b);
+    (isSpecial(t) ? special : signs).appendChild(b);
   }
-  function markChips() { for (const b of signs.children) b.setAttribute("aria-pressed", String(+b.dataset.n === selected)); }
+  function markChips() { for (const b of [...special.children, ...signs.children]) b.setAttribute("aria-pressed", String(+b.dataset.n === selected)); }
 
   function fromHash() {
     let h = "";
