@@ -464,21 +464,23 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       }
       if (!shown) return;
       const full = big ? t.bubble : words[0];
-      const fs = big ? Math.max(10, P * 1.3) : Math.max(8, Math.min(15, P * 2.8));
+      // on the map the bubble scales with the trees (small when zoomed out, never bigger than a tree)
+      const fs = big ? Math.max(10, P * 1.3) : Math.max(3.5, Math.min(16, P * 3.2));
       c.font = `${fs}px ${FONT}`;
-      const tw = c.measureText(full).width, padX = big ? 9 : 5, bw = tw + 2 * padX, bh = fs + (big ? 14 : 8);
+      const tw = c.measureText(full).width, padX = big ? 9 : fs * 0.35, bw = tw + 2 * padX, bh = big ? fs + 14 : fs * 1.45;
+      const tail = big ? 5 : Math.max(1.5, fs * 0.35);
       let bx1 = x0 + (big ? 7.3 : 7) * P, bx0 = bx1 - bw;
       if (bx0 < minX) { bx0 = minX; bx1 = bx0 + bw; }
       const by0 = big ? y0 - 1.6 * P : y0 - bh * 0.35;
       c.save();
-      c.shadowColor = "rgba(255,255,255,0.6)"; c.shadowBlur = big ? 0 : 6;
-      c.fillStyle = "#121214"; c.strokeStyle = "rgba(255,255,255,0.9)"; c.lineWidth = big ? 1.5 : 1;
-      roundRect(c, bx0, by0, bw, bh, big ? 6 : 4); c.fill(); c.stroke();
+      c.shadowColor = "rgba(255,255,255,0.6)"; c.shadowBlur = big ? 0 : Math.min(6, fs * 0.4);
+      c.fillStyle = "#121214"; c.strokeStyle = "rgba(255,255,255,0.9)"; c.lineWidth = big ? 1.5 : Math.min(1, fs / 10);
+      roundRect(c, bx0, by0, bw, bh, big ? 6 : Math.min(4, fs * 0.3)); c.fill(); c.stroke();
       c.restore();
-      const tx = Math.min(bx1 - 6, Math.max(bx0 + 6, x0 + 5 * P));
-      c.fillStyle = "#121214"; c.strokeStyle = "rgba(255,255,255,0.9)"; c.lineWidth = big ? 1.5 : 1;
-      c.beginPath(); c.moveTo(tx - 5, by0 + bh); c.lineTo(x0 + 4.6 * P, y0 + 2.4 * P); c.lineTo(tx + 3, by0 + bh); c.closePath(); c.fill(); c.stroke();
-      c.fillRect(tx - 4, by0 + bh - 1.6, 6.5, 3);
+      const tx = Math.min(bx1 - tail, Math.max(bx0 + tail, x0 + 5 * P));
+      c.fillStyle = "#121214"; c.strokeStyle = "rgba(255,255,255,0.9)"; c.lineWidth = big ? 1.5 : Math.min(1, fs / 10);
+      c.beginPath(); c.moveTo(tx - tail, by0 + bh); c.lineTo(x0 + 4.6 * P, y0 + 2.4 * P); c.lineTo(tx + tail * 0.6, by0 + bh); c.closePath(); c.fill(); c.stroke();
+      c.fillRect(tx - tail * 0.8, by0 + bh - tail * 0.3, tail * 1.3, tail * 0.6);
       c.fillStyle = "#f2f2f3"; c.textBaseline = "middle";
       c.fillText(words.slice(0, shown).join(" "), bx0 + padX, by0 + bh / 2 + 1);
     }
