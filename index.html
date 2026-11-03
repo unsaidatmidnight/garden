@@ -146,6 +146,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   "unlocked": ["color", "moonlight"],
   "green_upto": 49,
   "latest_post": "https://www.instagram.com/reel/DfOdibuosFn/",
+  "houses": [ { "owner": 6, "title": "the garden's first house" } ],
   "riddle_day": 2,
   "trees": [
     { "n": 1, "day": 1 },
@@ -153,7 +154,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     { "n": 3, "nick": "cricketer_aarav_sharma", "day": 2, "note": "sign extended to fit the name. barely." },
     { "n": 4, "nick": "poaszz", "day": 2, "note": "said hey :p. the tree says hey back." },
     { "n": 5, "nick": "dom7.nuss", "day": 3, "founder": true, "look": "bubble", "bubble": "tung. tung. tung.", "note": "it says this every night at 3am. we're looking into it." },
-    { "n": 6, "nick": "angellboness", "day": 3, "founder": true, "look": "flower", "note": "the only pink thing in the whole garden. no pressure." },
+    { "n": 6, "nick": "angellboness", "day": 3, "founder": true, "look": "flower", "note": "the only pink in the whole garden. forever. and now a house next door." },
     { "n": 7, "nick": "markd_wear", "day": 3, "founder": true, "look": "coins", "status": "growing. financially.", "note": "already doing better than me financially." },
     { "n": 8, "nick": "gustfferreira", "day": 3, "founder": true, "look": "red", "status": "red. on purpose.", "note": "the only red tree here. it insists it's autumn." },
     { "n": 9, "nick": "d3mon.it", "day": 3, "note": "asked for eyes and a voice. the vote decides. it opens at 29." },
@@ -345,6 +346,47 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
   }
 
+  // The garden's first house (a founder gift). Same drawing as the story: smoke, lamp flicker, cat, pink stardust.
+  function drawHouse(c, x0, y0, P, time) {
+    const T = time == null ? 0.7 : time / 1000;
+    const R = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x0 + x * P, y0 + y * P, w * P, h * P); };
+    const rgb = (a) => `rgb(${a.map(v => Math.round(Math.max(0, Math.min(255, v)))).join(",")})`;
+    R(12.5, 1.5, 2, 4, "rgb(90,80,78)"); R(12.2, 1.0, 2.6, 0.7, "rgb(70,62,60)");
+    for (let r = 0; r < 7; r++) for (let x = 8 - r; x < 10 + r; x++) R(x, 2 + r, 1.02, 1.02, (x + r) % 3 ? "rgb(172,96,118)" : "rgb(141,79,97)");
+    R(0, 8.6, 18, 0.6, "rgb(120,67,83)");
+    for (let y = 9; y < 17; y++) R(2, y, 14, 1.02, y % 2 ? "rgb(158,140,118)" : "rgb(120,104,88)");
+    const L = 0.86 + 0.07 * Math.sin(2 * Math.PI * T) + 0.07 * Math.sin(4 * Math.PI * T + 1.3);
+    R(3.4, 9.8, 4.8, 3.6, "rgb(60,46,36)");
+    c.save(); c.shadowColor = "rgba(255,200,110,0.8)"; c.shadowBlur = P * 2 * L;
+    R(3.8, 10.2, 4.0, 2.9, rgb([255 * L, 208 * L, 120 * L])); c.restore();
+    R(5.8, 10.2, 0.2, 2.9, "rgb(60,46,36)"); R(3.8, 11.5, 4.0, 0.2, "rgb(60,46,36)");
+    const cat = "rgb(18,18,22)";
+    R(4.3, 11.9, 1.9, 1.2, cat); R(4.6, 11.1, 1.2, 0.9, cat); R(4.6, 10.8, 0.35, 0.4, cat); R(5.45, 10.8, 0.35, 0.4, cat);
+    R(6.2, 12.5 + 0.35 * Math.sin(2 * Math.PI * T / 1.5), 0.9, 0.3, cat);
+    if (T % 3 >= 0.15) { R(4.8, 11.35, 0.2, 0.2, "rgb(120,220,140)"); R(5.4, 11.35, 0.2, 0.2, "rgb(120,220,140)"); }
+    R(3.2, 13.4, 5.2, 0.9, "rgb(110,72,50)");
+    [3.5, 4.8, 6.1, 7.4].forEach((fx, k) => {
+      const b = 0.55 + 0.45 * Math.sin(2 * Math.PI * T / 3 + k * 1.9);
+      R(fx, 12.9, 0.6, 0.6, rgb([255, 70 + 70 * b, 150 + 50 * b])); R(fx - 0.1, 13.3, 0.8, 0.2, "rgb(95,160,105)");
+    });
+    c.save(); c.shadowColor = "rgba(255,120,190,0.7)"; c.shadowBlur = P * 1.5;
+    R(10, 11.5, 3.2, 5.5, "rgb(236,120,172)"); c.restore();
+    R(10, 11.5, 3.2, 0.4, "rgb(177,90,129)"); R(12.4, 14.2, 0.5, 0.5, "rgb(255,220,120)");
+    R(9.6, 17, 4.0, 0.5, "rgb(90,86,84)");
+    for (let k = 0; k < 5; k++) {   // chimney smoke
+      const ph = (T / 3 + k / 5) % 1, sz = 0.6 + 1.3 * ph, a = (1 - ph) * Math.min(1, ph * 6);
+      R(13.3 + Math.sin(ph * 5 + k) * 0.6 + ph * 1.2, 0.6 - ph * 6, sz, sz, `rgba(170,170,170,${(0.85 * a).toFixed(3)})`);
+    }
+    c.save(); c.shadowColor = "rgba(255,120,200,0.9)"; c.shadowBlur = P * 1.2;
+    for (let k = 0; k < 26; k++) {  // pink stardust
+      const per = [3, 6, 2][k % 3], ph = (T / per + k * 0.137) % 1;
+      const tw = 0.5 + 0.5 * Math.sin(2 * Math.PI * (T / 1.5 + k * 0.31));
+      const a = Math.min(1, ph * 5, (1 - ph) * 5) * (0.4 + 0.6 * tw);
+      R(-1.5 + (k * 7.3) % 21 + Math.sin(ph * 6.3 + k) * 0.5, -3 + ph * 21, 0.45, 0.45, `rgba(255,${Math.round(120 + 80 * tw)},${Math.round(190 + 40 * tw)},${a.toFixed(3)})`);
+    }
+    c.restore();
+  }
+
   // Moving details of the founder trees. x0,y0 = sprite top-left, P = one tree pixel. time null = still frame.
   function drawDetails(c, t, x0, y0, P, time, big, minX) {
     const T = time == null ? null : time / 1000;
@@ -463,9 +505,24 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     }
     return pts;
   }
-  const PLOTS = spiral(total + 8);
-  const POS = PLOTS.slice(0, total);
-  const FREE = PLOTS.slice(total);
+  // houses are not trees: each one takes the first free plot right next to its owner's tree, and is not counted
+  const HOUSES = (D.houses || []).map(h => Object.assign({}, h));
+  const PLOTS = spiral(total + HOUSES.length * 4 + 12);
+  const POS = [], taken = new Set();
+  const adj = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1;
+  let pi = 0;
+  for (let n = 1; n <= total; n++) {
+    while (taken.has(pi)) pi++;
+    POS.push(PLOTS[pi]); taken.add(pi);
+    for (const h of HOUSES) if (h.owner === n) {
+      // prefer a plot on the same row (the name sign above the tree must not cover the house)
+      let j = pi + 1;
+      while (taken.has(j) || !(adj(PLOTS[j], PLOTS[pi]) && PLOTS[j][1] === PLOTS[pi][1])) j++;
+      taken.add(j); h.pos = PLOTS[j];
+    }
+    pi++;
+  }
+  const FREE = PLOTS.filter((p, i) => !taken.has(i) && i > pi - 1).slice(0, 8);
   // the next goal, drawn to scale around the garden (1 plot = 3 m)
   const px_ = POS.map(p => p[0]), py_ = POS.map(p => p[1]);
   const GC = [(Math.min(...px_) + Math.max(...px_)) / 2, (Math.min(...py_) + Math.max(...py_)) / 2];
@@ -590,6 +647,13 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
         ctx.fillRect(Math.round(x + plot * 0.36 - 5), Math.round(y - plot * 0.41), 12, 5);
       }
     }
+    for (const h of HOUSES) if (h.pos) {
+      const [x, y] = toScreen(...h.pos);
+      ctx.lineWidth = 1; ctx.strokeStyle = "rgba(255,150,200,0.22)";
+      ctx.strokeRect(x - plot / 2 + 0.5, y - plot / 2 + 0.5, plot - 1, plot - 1);
+      if (P * 17 < 7) { ctx.fillStyle = "#f08cbe"; ctx.fillRect(x - 3, y - 3, 6, 6); continue; }
+      drawHouse(ctx, x - 9 * P, y - 9.6 * P, P, time);
+    }
     ctx.imageSmoothingEnabled = false;
     for (const [t, X0, Y0] of later) drawDetails(ctx, t, X0, Y0, P, time, false, -1e9);
     if (selected) {
@@ -641,6 +705,8 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   cv.addEventListener("click", ev => {
     const r = cv.getBoundingClientRect();
     const wx = cam.x + (ev.clientX - r.left - W / 2) / cam.s, wy = cam.y + (ev.clientY - r.top - H / 2) / cam.s;
+    const h = HOUSES.find(h => h.pos && Math.abs(h.pos[0] - wx) <= 0.5 && Math.abs(h.pos[1] - wy) <= 0.5);
+    if (h) { const o = info(h.owner); select(o.n, true); setMsg(`${esc(h.title)}. it belongs to <strong>@${esc(o.nick)}</strong>. the tree is next door.`); return; }
     const i = POS.findIndex(([px, py]) => Math.abs(px - wx) <= 0.5 && Math.abs(py - wy) <= 0.5);
     if (i >= 0) { select(i + 1, true); setMsg(found(info(i + 1))); }
   });
@@ -726,6 +792,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
           <dt>owner</dt><dd>${esc(owner)}</dd>
           <dt>planted</dt><dd>${esc(planted)}</dd>
           <dt>plot</dt><dd>3 × 3 m</dd>
+          ${HOUSES.some(h => h.owner === t.n) ? `<dt>house</dt><dd>next door · 3 × 3 m · the first one in the garden</dd>` : ""}
           <dt>status</dt><dd>${esc(status)}</dd>
         </dl>
         ${note ? `<p class="note">${note}</p>` : ""}
