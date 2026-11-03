@@ -103,6 +103,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--fg); outline-of
 .card.empty { display: block; color: var(--dim); }
 .portrait { width: 100%; aspect-ratio: 1 / 1; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
 .portrait canvas { display: block; width: 100%; height: 100%; }
+.card.withhouse { grid-template-columns: minmax(0, 1fr); }
+.card.withhouse .portrait { aspect-ratio: 2 / 1; max-width: 560px; }
+.portrait-labels { display: flex; justify-content: space-around; max-width: 560px; color: var(--faint); font-size: 13px; margin-top: 6px; }
 .facts { min-width: 0; display: grid; gap: 12px; }
 .facts .id { margin: 0; color: var(--dim); font-size: 14px; letter-spacing: 0.06em; }
 dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; }
@@ -131,6 +134,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
 @media (max-width: 480px) {
   .card { grid-template-columns: minmax(0, 1fr); }
   .portrait { max-width: 260px; justify-self: center; width: 100%; }
+  .card.withhouse .portrait { max-width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
 </style>
@@ -560,7 +564,9 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   }
   function focusView(n) {
     const f = fitView();
-    const [px, py] = POS[n - 1];
+    let [px, py] = POS[n - 1];
+    const h = HOUSES.find(h => h.owner === n && h.pos);
+    if (h) { px = (px + h.pos[0]) / 2; py = (py + h.pos[1]) / 2; }
     const s = Math.max(f.s, Math.min(f.s * 2.4, W / 4.2));
     return { x: px, y: py - 0.15, s };
   }
@@ -664,6 +670,11 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       ctx.shadowColor = "rgba(255,255,255,0.8)"; ctx.shadowBlur = 14;
       ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 2;
       ctx.strokeRect(x - plot / 2 + 1, y - plot / 2 + 1, plot - 2, plot - 2);
+      for (const h of HOUSES) if (h.owner === selected && h.pos) {
+        const [hx, hy] = toScreen(...h.pos);
+        ctx.shadowColor = "rgba(255,140,200,0.8)"; ctx.strokeStyle = `rgba(255,150,200,${a})`;
+        ctx.strokeRect(hx - plot / 2 + 1, hy - plot / 2 + 1, plot - 2, plot - 2);
+      }
       ctx.restore();
       const label = t.nick ? "@" + t.nick : "no sign yet";
       const fs = Math.max(12, Math.min(17, plot * 0.12));
@@ -706,7 +717,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const r = cv.getBoundingClientRect();
     const wx = cam.x + (ev.clientX - r.left - W / 2) / cam.s, wy = cam.y + (ev.clientY - r.top - H / 2) / cam.s;
     const h = HOUSES.find(h => h.pos && Math.abs(h.pos[0] - wx) <= 0.5 && Math.abs(h.pos[1] - wy) <= 0.5);
-    if (h) { const o = info(h.owner); select(o.n, true); setMsg(`${esc(h.title)}. it belongs to <strong>@${esc(o.nick)}</strong>. the tree is next door.`); return; }
+    if (h) { const o = info(h.owner); select(o.n, true); setMsg(`${esc(h.title)}. it belongs to <strong>@${esc(o.nick)}</strong>. the tree is next door.`); cardEl.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); return; }
     const i = POS.findIndex(([px, py]) => Math.abs(px - wx) <= 0.5 && Math.abs(py - wy) <= 0.5);
     if (i >= 0) { select(i + 1, true); setMsg(found(info(i + 1))); }
   });
@@ -716,15 +727,17 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   let portrait = null;
   function setupPortrait(canvas, t) {
     const r = canvas.getBoundingClientRect();
-    const S = r.width, k = Math.min(3, window.devicePixelRatio || 1);
+    const Wd = r.width, Hd = r.height || r.width, S = Math.min(Wd, Hd), k = Math.min(3, window.devicePixelRatio || 1);
     if (!S) return;
-    canvas.width = Math.round(S * k); canvas.height = Math.round(S * k);
+    canvas.width = Math.round(Wd * k); canvas.height = Math.round(Hd * k);
     const base = document.createElement("canvas"); base.width = canvas.width; base.height = canvas.height;
     const c = base.getContext("2d");
     c.setTransform(k, 0, 0, k, 0, 0);
-    c.fillStyle = "#0b0b0c"; c.fillRect(0, 0, S, S);
+    c.fillStyle = "#0b0b0c"; c.fillRect(0, 0, Wd, Hd);
     const { P, x0, y0 } = treeSquare(c, S, t);
-    portrait = { canvas, ctx: canvas.getContext("2d"), base, k, S, t, P, x0, y0 };
+    const house = HOUSES.find(h => h.owner === t.n && Wd > S * 1.5);
+    if (house) { c.strokeStyle = "rgba(255,150,200,0.3)"; c.lineWidth = 1; c.strokeRect(S + S * 0.11, S * 0.13, S * 0.78, S * 0.78); }
+    portrait = { canvas, ctx: canvas.getContext("2d"), base, k, S, t, P, x0, y0, house };
     paintPortrait(reduced ? null : performance.now());
   }
   // the tree + its sign, drawn into a square of side S (top-left at 0,0 of the current transform)
@@ -766,18 +779,24 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   }
   function paintPortrait(time) {
     if (!portrait || !portrait.canvas.isConnected) return;
-    const { ctx: c, base, k, t, P, x0, y0 } = portrait;
+    const { ctx: c, base, k, t, P, x0, y0, S, house } = portrait;
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.drawImage(base, 0, 0);
     c.setTransform(k, 0, 0, k, 0, 0);
     if (t.look) drawDetails(c, t, x0, y0, P, time, true, 6);
+    if (house) {   // the house in the right square, same scale and ground line as the tree
+      c.save(); c.beginPath(); c.rect(S, 0, S, S); c.clip();
+      drawHouse(c, S + S / 2 - 9 * P, S * 0.55 - 8 * P, P, time);
+      c.restore();
+    }
   }
 
   // ---------- card ----------
   const cardEl = document.getElementById("card");
   const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
   function renderCard(t) {
-    cardEl.className = "card";
+    const hasHouse = HOUSES.some(h => h.owner === t.n);
+    cardEl.className = hasHouse ? "card withhouse" : "card";
     const planted = t.sprouting ? `arrives in day ${pad3(t.day || D.next_day)}` : (t.day ? `day ${pad3(t.day)}` + (t.day > D.day ? " (next episode)" : "") : "—");
     const status = t.sprouting ? "sprouting. patience." : (t.status || "growing. probably.");
     const owner = t.nick ? "@" + t.nick : "no sign yet";
@@ -785,7 +804,10 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now."
       : t.winner ? "council winner: the most-liked idea when the garden reached a basketball court." : "";
     cardEl.innerHTML = `
-      <div class="portrait"><canvas aria-label="portrait of the tree"></canvas></div>
+      <div>
+        <div class="portrait"><canvas aria-label="portrait of the tree${hasHouse ? " and the house next door" : ""}"></canvas></div>
+        ${hasHouse ? `<div class="portrait-labels"><span>the tree</span><span>the house</span></div>` : ""}
+      </div>
       <div class="facts">
         ${t.founder ? `<p class="id">founder</p>` : t.winner ? `<p class="id">council winner</p>` : ""}
         <dl>
