@@ -146,7 +146,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
 {
   "day": 6,
   "next_day": 7,
-  "planted": 112,
+  "planted": 129,
   "counted": "16 nov",
   "next": {"name": "olympic pool", "need": 139, "w": 50, "h": 25},
   "unlocked": ["color", "moonlight"],
@@ -231,7 +231,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     <p class="lede" style="margin-bottom:12px">the plan: cover the whole planet. eta: never. probably.</p>
     <ul class="how" aria-label="how the garden works">
       <li>→ <b>1. follow.</b> a tree wakes up for you. right away. it just has no name on it yet.</li>
-      <li>→ <b>2. comment "me"</b> under <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> on instagram. your name gets carved on a sign in the next garden update. not instantly. updates take a few days.</li>
+      <li>→ <b>2. comment "me"</b> under any garden post on instagram (<a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> works too). your name gets carved on a sign in the next garden update. not instantly. updates take a few days.</li>
       <li>→ <b>3. find it.</b> type your name in the search above. there it is.</li>
       <li>→ <b>got an idea for your tree?</b> comment it under any garden reel. 20 likes on your comment before the next update and it grows. that's the council.</li>
       <li>→ <b>the forest is asleep.</b> central park, 281,110 trees. the gray ones are still waiting for their follower.</li>
@@ -1078,7 +1078,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const planted = t.isNew ? `shows up in day ${pad3(t.day || D.next_day)}` : (t.day ? `day ${pad3(t.day)}` + (t.day > D.day ? " (next episode)" : "") : "—");
     const status = asleep(t) ? "asleep. wakes up at the next milestone." : (t.status || "growing. probably.");
     const owner = t.nick ? "@" + t.nick : "no sign yet";
-    const note = t.note ? esc(t.note) : (t.nick ? "" : `a follower's tree. no name on it yet. comment "me" under ${LATEST} on instagram to get a sign.`);
+    const note = t.note ? esc(t.note) : (t.nick ? "" : `a follower's tree. no name on it yet. comment "me" under any garden post on instagram to get a sign.`);
     const small = t.founder ? "founder tree: one of the first four who asked for something special. that list is closed now."
       : t.winner ? "council winner: the most-liked idea in a garden council vote." : "";
     cardEl.innerHTML = `
@@ -1202,7 +1202,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       setMsg("a few trees match. which one?<div class=\"chips\">" + r.list.map(t => `<button type="button" data-n="${t.n}">@${esc(t.nick)}</button>`).join("") + "</div>");
       return;
     }
-    setMsg(`no sign for <strong>@${esc(r.q)}</strong> yet. if you follow, your tree is already here, it just has no name on it. comment "me" under ${LATEST} on instagram and the sign gets carved in the next garden update. not following yet? that part comes first.`);
+    setMsg(`no sign for <strong>@${esc(r.q)}</strong> yet. if you follow, your tree is already here, it just has no name on it. comment "me" under any garden post on instagram (${LATEST} works too) and the sign gets carved in the next garden update. not following yet? that part comes first.`);
   });
   msg.addEventListener("click", ev => { const b = ev.target.closest("button[data-n]"); if (b) { const t = info(+b.dataset.n); select(t.n, true); setMsg(found(t)); } });
 
