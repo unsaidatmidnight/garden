@@ -92,6 +92,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--fg); outline-of
 .map { position: relative; width: 100%; aspect-ratio: 4 / 3; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); touch-action: manipulation; }
 #map { display: block; width: 100%; height: 100%; cursor: pointer; }
 #fit { position: absolute; right: 10px; bottom: 10px; font-size: 13px; padding: 5px 10px; background: var(--bg); }
+#snd { position: absolute; left: 10px; bottom: 10px; font-size: 13px; padding: 5px 10px; background: var(--bg); }
+#snd[aria-pressed="true"] { border-color: rgba(140, 230, 170, 0.6); color: #8ce6aa; }
 .stats { display: grid; gap: 8px; margin-top: 14px; font-variant-numeric: tabular-nums; }
 .stats .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; color: var(--dim); }
 .stats .row b { color: var(--fg); font-weight: 400; }
@@ -189,6 +191,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     <div class="map">
       <canvas id="map" aria-label="map of the garden, seen from above. tap a tree to open it."></canvas>
       <button id="fit" type="button">zoom out: the whole forest</button>
+      <button id="snd" type="button" aria-pressed="false" aria-label="garden sound">sound: off</button>
     </div>
     <div class="stats">
       <div class="row"><span>awake: <b id="sTrees">4</b> · <b id="sArea">36 m²</b></span><span id="sSprout"></span></div>
@@ -848,6 +851,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   function frame(now) {
     stepTween(now);
     draw(now);
+    SND.tick(now);
     paintPortrait(now);
     requestAnimationFrame(frame);
   }
@@ -860,9 +864,9 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     const r = cv.getBoundingClientRect();
     const wx = cam.x + (ev.clientX - r.left - W / 2) / cam.s, wy = cam.y + (ev.clientY - r.top - H / 2) / cam.s;
     const h = HOUSES.find(h => h.pos && Math.abs(h.pos[0] - wx) <= 0.5 && Math.abs(h.pos[1] - wy) <= 0.5);
-    if (h) { const o = info(h.owner); select(o.n, true); setMsg(`${esc(h.title)}. it belongs to <strong>@${esc(o.nick)}</strong>. the tree is next door.`); cardEl.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); return; }
+    if (h) { SND.tap(h.kind === "dog" ? "dog" : "cat", ...h.pos); const o = info(h.owner); select(o.n, true); setMsg(`${esc(h.title)}. it belongs to <strong>@${esc(o.nick)}</strong>. the tree is next door.`); cardEl.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); return; }
     const i = POS.findIndex(([px, py]) => Math.abs(px - wx) <= 0.5 && Math.abs(py - wy) <= 0.5);
-    if (i >= 0) { select(i + 1, true); setMsg(found(info(i + 1))); }
+    if (i >= 0) { const t = info(i + 1); if (t.look === "bubble") SND.tap("tung", ...POS[i]); else SND.treeNote(i + 1); select(i + 1, true); setMsg(found(t)); }
   });
   let farView = false;
   const fitBtn = document.getElementById("fit");
@@ -872,6 +876,139 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     fitBtn.textContent = farView ? "back to the awake part" : "zoom out: the whole forest";
     animateTo(farView ? parkView() : fitView());
   });
+
+  // ---------- sound (synthesized, off until tapped) ----------
+  const SND = (() => {
+    let ac = null, out = null, on = false, bed = null, nextCricket = 0, nextSnore = 0, nextTick = 0;
+    const prevPh = {};
+    const btn = document.getElementById("snd");
+    const midi = m => 440 * Math.pow(2, (m - 69) / 12);
+    let noiseBuf = null;
+    function init() {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 4;
+      out = ac.createGain(); out.gain.value = 2.0; out.connect(comp); comp.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    function panNode(p) { const n = ac.createStereoPanner ? ac.createStereoPanner() : ac.createGain(); if (n.pan) n.pan.value = Math.max(-1, Math.min(1, p)); n.connect(out); return n; }
+    function tone(f, t, { type = "square", dur = 0.2, gain = 0.06, att = 0.004, pan = 0, f2 = null, f2t = 0.1, lp = null } = {}) {
+      const o = ac.createOscillator(), g = ac.createGain(); o.type = type;
+      o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + f2t);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      let node = o; if (lp) { const fl = ac.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = lp; o.connect(fl); node = fl; }
+      node.connect(g); g.connect(panNode(pan)); o.start(t); o.stop(t + dur + 0.05);
+    }
+    function noise(t, { dur = 0.3, gain = 0.05, type = "lowpass", f = 600, q = 0.7, att = 0.01, pan = 0 } = {}) {
+      const src = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = noiseBuf; src.loop = true; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(fl); fl.connect(g); g.connect(panNode(pan)); src.start(t, Math.random()); src.stop(t + dur + 0.05);
+    }
+    function startBed() {   // wind: filtered noise breathing slowly
+      const src = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+      src.buffer = noiseBuf; src.loop = true; fl.type = "bandpass"; fl.frequency.value = 380; fl.Q.value = 0.6;
+      g.gain.value = 0.0001; g.gain.setTargetAtTime(0.022, ac.currentTime, 1.2);
+      lfo.frequency.value = 0.07; lg.gain.value = 0.012; lfo.connect(lg); lg.connect(g.gain);
+      src.connect(fl); fl.connect(g); g.connect(out); src.start(); lfo.start();
+      bed = { src, lfo, g };
+    }
+    function stopBed() { if (!bed) return; const t = ac.currentTime; bed.g.gain.setTargetAtTime(0.0001, t, 0.3); bed.src.stop(t + 1.5); bed.lfo.stop(t + 1.5); bed = null; }
+    function cricket(t) {
+      const f = Math.random() < 0.5 ? 4300 : 4750, p = Math.random() * 1.6 - 0.8;
+      for (let k = 0; k < 3; k++) tone(f, t + k * 0.026, { type: "sine", dur: 0.014, gain: 0.0075, att: 0.003, pan: p });
+    }
+    // where a thing sits on screen -> [volume 0..1, pan -1..1]
+    function near(wx, wy) {
+      const [x, y] = toScreen(wx, wy), P = cam.s * 0.043;
+      if (x < -40 || x > W + 40 || y < -40 || y > H + 40) return [0, 0];
+      const dx = (x - W / 2) / (W / 2), dy = (y - H / 2) / (H / 2);
+      const zoom = Math.max(0, Math.min(1, (P - 0.9) / 1.6));
+      return [zoom * Math.max(0, 1 - 0.55 * Math.hypot(dx, dy)), dx * 0.7];
+    }
+    const SCALE = [0, 2, 4, 7, 9];
+    function treeNote(n) {
+      if (!on) return;
+      const t = ac.currentTime + 0.01, i = (n - 1) % 15, m = 64 + 12 * Math.floor(i / 5) + SCALE[i % 5];
+      tone(midi(m), t, { dur: 0.22, gain: 0.05, lp: 3200 });
+      tone(midi(m - 24), t, { type: "triangle", dur: 0.14, gain: 0.07 });
+    }
+    function foundChime() {
+      if (!on) return;
+      const t = ac.currentTime + 0.01;
+      [72, 76, 79, 84].forEach((m, k) => tone(midi(m), t + k * 0.075, { type: "triangle", dur: 0.9, gain: 0.06, pan: -0.3 + 0.2 * k }));
+    }
+    function meow(pan) {
+      const t = ac.currentTime + 0.01;
+      tone(560, t, { type: "square", dur: 0.55, gain: 0.07, att: 0.04, f2: 820, f2t: 0.16, lp: 1700, pan });
+      tone(820, t + 0.17, { type: "square", dur: 0.4, gain: 0.06, att: 0.02, f2: 470, f2t: 0.36, lp: 1500, pan });
+    }
+    function wuf(pan) {
+      const t = ac.currentTime + 0.01;
+      tone(210, t, { type: "square", dur: 0.16, gain: 0.08, f2: 120, f2t: 0.14, lp: 900, pan });
+      noise(t, { dur: 0.12, gain: 0.08, f: 700, pan });
+    }
+    function tung(pan) {
+      const t = ac.currentTime + 0.01;
+      for (let k = 0; k < 3; k++) {
+        const s = t + k * 0.32;
+        tone(240, s, { type: "sine", dur: 0.32, gain: 0.16, att: 0.002, f2: 170, f2t: 0.09, pan });
+        tone(720, s, { type: "triangle", dur: 0.06, gain: 0.05, att: 0.001, pan });
+        noise(s, { dur: 0.03, gain: 0.04, type: "highpass", f: 2500, att: 0.001, pan });
+      }
+    }
+    function ting(v, pan) {
+      const t = ac.currentTime + 0.005, f = [2637, 3136, 3520][Math.floor(Math.random() * 3)];
+      tone(f, t, { type: "sine", dur: 0.22, gain: 0.045 * v, att: 0.002, pan });
+      tone(f * 1.5, t + 0.04, { type: "sine", dur: 0.16, gain: 0.015 * v, att: 0.002, pan });
+    }
+    function snore(v, pan) {
+      const t = ac.currentTime + 0.01;
+      noise(t, { dur: 1.3, gain: 0.09 * v, f: 260, q: 2, att: 0.9, pan });
+      tone(70, t + 0.1, { type: "sawtooth", dur: 1.1, gain: 0.012 * v, att: 0.8, lp: 220, pan });
+    }
+    // runs every frame while sound is on: crickets, sparkles, the dog's snore
+    function tick(now) {
+      if (!on || ac.state !== "running" || now < nextTick) return;
+      nextTick = now + 30;
+      const t = ac.currentTime, T = now / 1000;
+      if (t >= nextCricket) { cricket(t + 0.02); nextCricket = t + 0.9 + Math.random() * 2.2; }
+      for (let n = 1; n <= Math.min(POS.length, total); n++) {
+        const look = info(n).look; if (look !== "flower" && look !== "coins") continue;
+        const [v, pan] = near(...POS[n - 1]); if (v < 0.05) continue;
+        const K = look === "flower" ? 5 : 3;
+        for (let k = 0; k < K; k++) {
+          const ph = look === "flower" ? (T * 0.5 + k * 0.37) % 1 : (T * 0.42 + k * 0.31) % 1, key = n * 10 + k;
+          const wrapped = prevPh[key] != null && ph < prevPh[key]; prevPh[key] = ph;
+          if (!wrapped) continue;
+          if (look === "coins" && Math.abs(Math.cos(T * 1.4 + k * 1.7)) <= 0.55) continue;
+          if (Math.random() < (look === "flower" ? 0.45 : 0.8)) ting(v, pan);
+        }
+      }
+      const dog = HOUSES.find(h => h.kind === "dog" && h.pos);
+      if (dog && t >= nextSnore) {
+        nextSnore = t + 2.9;
+        const [v, pan] = near(...dog.pos);
+        if (v > 0.05 && dogState(now, 1)[0] === "sleep") snore(v, pan);
+      }
+    }
+    function set(v) {
+      on = v;
+      btn.textContent = on ? "sound: on" : "sound: off"; btn.setAttribute("aria-pressed", String(on));
+      if (on) {
+        if (!ac) init();
+        ac.resume(); if (!bed) startBed(); nextCricket = ac.currentTime + 0.4;
+        if (reduced) paint();
+      } else if (ac) { stopBed(); }
+    }
+    btn.addEventListener("click", ev => { ev.stopPropagation(); set(!on); if (on) foundChime(); });
+    document.addEventListener("visibilitychange", () => { if (!ac) return; if (document.hidden) ac.suspend(); else if (on) ac.resume(); });
+    return { tick, treeNote, foundChime, tap(kind, wx, wy) {
+      if (!on) return;
+      const pan = near(wx, wy)[1];
+      if (kind === "cat") meow(pan); else if (kind === "dog") wuf(pan); else if (kind === "tung") tung(pan);
+    } };
+  })();
 
   // ---------- portrait (the personal card) ----------
   let portrait = null;
@@ -1060,7 +1197,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     ev.preventDefault();
     const r = search(document.getElementById("q").value);
     if (r.kind === "empty") { setMsg("type a name first. the trees can't guess. yet."); return; }
-    if (r.kind === "one") { select(r.t.n, true); setMsg(found(r.t)); toMap(); return; }
+    if (r.kind === "one") { SND.foundChime(); select(r.t.n, true); setMsg(found(r.t)); toMap(); return; }
     if (r.kind === "many") {
       setMsg("a few trees match. which one?<div class=\"chips\">" + r.list.map(t => `<button type="button" data-n="${t.n}">@${esc(t.nick)}</button>`).join("") + "</div>");
       return;
