@@ -205,7 +205,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       <input id="q" name="q" type="text" inputmode="text" autocapitalize="none" spellcheck="false" placeholder="your instagram name" aria-describedby="msg">
       <button type="submit">find</button>
     </div>
-    <p id="msg" aria-live="polite">works for trees with a sign. no sign yet? see "how the garden works" below.</p>
+    <p id="msg" aria-live="polite">works for trees with a sign. no sign yet? 3 steps in <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> on instagram.</p>
   </form>
 
   <section id="card" class="card empty" aria-live="polite">
@@ -226,23 +226,24 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
   <section class="riddle">
     <p>open riddle</p>
     <p class="q">how many followers does it take to cover the planet?</p>
-    <p id="riddleWhere">guess in the comments under <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> on instagram. closest guess gets a tree with their name.</p>
+    <p id="riddleWhere">guess in the comments under any garden reel on instagram. closest guess gets a tree with their name.</p>
   </section>
 
   <details class="rules">
     <summary>how the garden works</summary>
     <p class="lede" style="margin-bottom:12px">the plan: cover the whole planet. eta: never. probably.</p>
     <ul class="how" aria-label="how the garden works">
-      <li>→ <b>follow</b> and you get a tree. it's in here somewhere, just without your name on it.</li>
-      <li>→ <b>comment "me"</b> under <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> on instagram and your name gets carved on a sign in the next garden update. then you can find it with the search above.</li>
-      <li>→ <b>special trees</b> are rare: the first four who asked, plus one vote winner at every milestone.</li>
-      <li>→ <b>the forest is asleep.</b> central park, 281,110 trees. every follower wakes one up, right away. the gray ones are still waiting for theirs.</li>
+      <li>→ <b>1. follow.</b> a tree wakes up for you. right away. it just has no name on it yet.</li>
+      <li>→ <b>2. comment "me"</b> under <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> on instagram. your name gets carved on a sign in the next garden update. not instantly. updates take a few days.</li>
+      <li>→ <b>3. find it.</b> type your name in the search above. there it is.</li>
+      <li>→ <b>got an idea for your tree?</b> comment it under any garden reel. 20 likes on your comment before the next update and it grows. that's the council.</li>
+      <li>→ <b>the forest is asleep.</b> central park, 281,110 trees. the gray ones are still waiting for their follower.</li>
     </ul>
   </details>
 
   <footer>
     <span>pixel trees. I can't afford real ones. yet.</span>
-    <span>no sign yet? follow, then comment "me" under <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a> on instagram. the sign gets carved in the next garden update.</span>
+    <span>how to get yours: 3 steps in <a class="latest" href="https://www.instagram.com/p/DfxoQm4CM9T/" target="_blank" rel="noopener">the pinned post</a>.</span>
     <nav>
       <a href="https://www.instagram.com/unsaid.atmidnight/" target="_blank" rel="noopener">instagram @unsaid.atmidnight</a>
       <a href="https://t.me/unsaidatmidnight" target="_blank" rel="noopener">telegram</a>
@@ -732,6 +733,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       ctx.save(); ctx.shadowColor = "rgba(190,210,255,0.8)"; ctx.shadowBlur = mr * 1.2; ctx.imageSmoothingEnabled = true;
       ctx.drawImage(mc, mx - mr, my - mr, mr * 2, mr * 2); ctx.restore();
     }
+    let finish = null;
     if (GOAL && plot >= 8) { // the finish line: next milestone at true scale (hidden when zoomed far out)
       const [gx, gy] = toScreen(GC[0] - GOAL.w / 2, GC[1] - GOAL.h / 2);
       const gw = GOAL.w * plot, gh = GOAL.h * plot;
@@ -746,9 +748,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       ctx.setLineDash([]);
       const fs = Math.max(11, Math.min(15, plot * 0.16));
       ctx.font = `${fs}px ${FONT}`; ctx.fillStyle = "rgba(255,255,255,0.62)"; ctx.textBaseline = "bottom";
-      const fl = `finish line: ${D.next.name} · ${D.planted}/${D.next.need}`;
-      ctx.fillStyle = "rgba(14,14,16,0.82)"; ctx.fillRect(gx - 4, gy - 8 - fs, ctx.measureText(fl).width + 8, fs + 6);
-      ctx.fillStyle = "rgba(255,255,255,0.72)"; ctx.fillText(fl, gx, gy - 6);
+      finish = [gx, gy, fs, `finish line: ${D.next.name} · ${D.planted}/${D.next.need}`];
       ctx.restore();
     }
     for (const [fx, fy] of FREE) {
@@ -761,7 +761,7 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
       ctx.strokeStyle = "rgba(255,255,255,0.28)";
       ctx.beginPath(); ctx.moveTo(x - k, y); ctx.lineTo(x + k, y); ctx.moveTo(x, y - k); ctx.lineTo(x, y + k); ctx.stroke();
     }
-    const later = [];
+    const later = [], signs = [];
     for (let n = 1; n <= total; n++) {
       const t = info(n);
       const [x, y] = toScreen(...POS[n - 1]);
@@ -787,12 +787,8 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
           ctx.fillText("z", X0 + (14 + ph * 2) * P, Y0 + (2.5 - ph * 3) * P);
         }
       }
-      if (t.nick && n !== selected) { // a tiny wooden sign marks a name
-        const sx = Math.round(x + plot * 0.33), sy = Math.round(y - plot * 0.42), sw = Math.max(9, Math.round(plot * 0.14)), sh = Math.max(4, Math.round(plot * 0.07));
-        ctx.fillStyle = "#28180f"; ctx.fillRect(sx + sw / 2 - 2, sy + sh - 1, 3, Math.round(plot * 0.12) + 1); ctx.fillRect(sx - 1, sy - 1, sw + 2, sh + 2);
-        ctx.fillStyle = "#7a5034"; ctx.fillRect(sx + sw / 2 - 1, sy + sh, 1.5, Math.round(plot * 0.12));
-        ctx.fillStyle = "#a47048"; ctx.fillRect(sx, sy, sw, sh);
-        ctx.fillStyle = "#c4925e"; ctx.fillRect(sx, sy, sw, 1);
+      if (t.nick && n !== selected && P >= 1.1) { // a small wooden sign at the foot of the tree, inside its own plot
+        signs.push([Math.round(x + 2.2 * P), Math.round(y + 5.6 * P), Math.round(6.2 * P), Math.round(2.6 * P), P]);
       }
     }
     for (const h of HOUSES) if (h.pos) {
@@ -806,6 +802,15 @@ footer a:hover { color: var(--fg); border-color: var(--fg); }
     }
     ctx.imageSmoothingEnabled = false;
     for (const [t, X0, Y0] of later) drawDetails(ctx, t, X0, Y0, P, time, false, -1e9);
+    for (const [bx, by, w, h, u] of signs) woodSign(ctx, bx, by, w, h, u * 0.6);
+    if (finish) {   // drawn last, so the trees never cover it
+      const [fx, fy, fs, fl] = finish;
+      ctx.save(); ctx.font = `${fs}px ${FONT}`; ctx.textBaseline = "bottom";
+      const fw = ctx.measureText(fl).width, lx = Math.max(8, Math.min(W - fw - 12, fx)), ly = Math.max(fs + 12, fy - 6);
+      ctx.fillStyle = "rgba(14,14,16,0.88)"; ctx.fillRect(lx - 5, ly - fs - 3, fw + 10, fs + 8);
+      ctx.fillStyle = "rgba(255,255,255,0.78)"; ctx.fillText(fl, lx, ly + 1);
+      ctx.restore();
+    }
     if (selected) {
       const t = info(selected);
       const [x, y] = toScreen(...POS[selected - 1]);
